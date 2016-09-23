@@ -1,10 +1,12 @@
 FROM ubuntu:trusty
-MAINTAINER winsent <pipetc@gmail.com>
+MAINTAINER eremaijala <ere.maijala@helsinki.fi>
+# Define the OSM argument, use finland as default
+ARG OSM=http://download.geofabrik.de/europe/finland-latest.osm.pbf
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV LANG C.UTF-8
-RUN locale-gen en_US.UTF-8
-RUN update-locale LANG=en_US.UTF-8
+ENV LANG fi_FI.UTF-8
+RUN locale-gen fi_FI.UTF-8
+RUN update-locale LANG=fi_FI.UTF-8
 
 # Install packages http://wiki.openstreetmap.org/wiki/Nominatim/Installation#Ubuntu.2FDebian
 RUN apt-get -y update --fix-missing && \
@@ -36,12 +38,14 @@ RUN cd ./src && git checkout $NOMINATIM_VERSION && git submodule update --recurs
 COPY local.php ./src/settings/local.php
 RUN rm -rf /var/www/html/* && ./src/utils/setup.php --create-website /var/www/html
 
+# Increase Nominatim hard-coded memory limit
+RUN sed -i "s/ini_set('memory_limit', '200M');/ini_set('memory_limit', '512M');/" /app/src/website/search.php
+
 # Apache configure
 COPY nominatim.conf /etc/apache2/sites-enabled/000-default.conf
 
 # Load initial data
-ENV PBF_DATA http://download.geofabrik.de/europe/monaco-latest.osm.pbf
-RUN curl $PBF_DATA --create-dirs -o /app/src/data.osm.pbf
+RUN curl $OSM --create-dirs -o /app/src/data.osm.pbf
 RUN service postgresql start && \
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='nominatim'" | grep -q 1 || sudo -u postgres createuser -s nominatim && \
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='www-data'" | grep -q 1 || sudo -u postgres createuser -SDR www-data && \

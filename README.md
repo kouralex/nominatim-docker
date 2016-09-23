@@ -2,50 +2,60 @@
 
 100% working container for [Nominatim](https://github.com/twain47/Nominatim).
 
-[![](https://images.microbadger.com/badges/image/mediagis/nominatim.svg)](https://microbadger.com/images/mediagis/nominatim "Get your own image badge on microbadger.com")
+## Local Changes
 
-# Supported tags and respective `Dockerfile` links #
+- Use Finland data file as default.
+- Use fi_FI.UTF-8 as the locale.
+- Make it possible to use a build arg to set the data file to download.
+- Update the Nominatim search.php to raise the hard-coded memory limit.
 
-- [`2.5.0`, `2.5`, `latest`  (*2.5/Dockerfile*)](https://github.com/mediagis/nominatim-docker/tree/master/2.5)
+# Supported tags and respective `Dockerfile` links
 
+- [`2.5.0`, `2.5`  (*2.5/Dockerfile*)](https://github.com/mediagis/nominatim-docker/tree/master/2.5)
 
-Run [http://wiki.openstreetmap.org/wiki/Nominatim](http://wiki.openstreetmap.org/wiki/Nominatim) in a docker container. Clones the current master and builds it. This is always the latest version, be cautious as it may be unstable.
+Run [http://wiki.openstreetmap.org/wiki/Nominatim](http://wiki.openstreetmap.org/wiki/Nominatim) in a docker container. Clones the branch and builds it. 
 
 Uses Ubuntu 14.04 and PostgreSQL 9.3
 
-# Country
-To check that everything is set up correctly, download and load to Postgres PBF file with minimal size - Europe/Monacco (latest) from geofabrik.de.
 
-If a different country should be used you can set `PBF_DATA` on build.
+# Building
 
-1. Clone repository
+To rebuild the image locally execute
 
-  ```
-  # git clone git@github.com:mediagis/nominatim-docker.git
-  # cd nominatim-docker/2.5
-  ```
+```
+docker build -t nominatim .
+```
 
-2. Modify Dockerfile, set your url for PBF
+# Changing the OSM url to download and use a different country
 
-  ```
-  ENV PBF_DATA http://download.geofabrik.de/europe/monaco-latest.osm.pbf
-  ```
-3. Build 
+This example downloads the belize data during compilation:
+```
+docker build --build-arg OSM=http://download.geofabrik.de/central-america/belize-latest.osm.pbf  -t nominatim .
+```
 
-  ```
-  docker build -t nominatim .
-  ```
-4. Run
-
-  ```
-  docker run --restart=always -d -p 8080:8080 --name nominatim-monacco nominatim
-  ```
-  If this succeeds, open [http://localhost:8080/](http:/localhost:8080) in a web browser
 # Running
 
-You can run Docker image from docher hub.
+By default the container exposes port `8080` To run the container execute
 
 ```
-docker run --restart=always -d -p 8080:8080 --name nominatim mediagis/nominatim-docker:latest
+# remove any existing containers
+docker rm -f nominatim_container || echo "nominatim_container not found, skipping removal"
+docker run -p 8080:8080 --name nominatim_container --detach nominatim
 ```
-Service will run on [http://localhost:8080/](http:/localhost:8080)
+
+Check the logs of the running container
+
+```
+docker logs nominatim_container
+```
+
+Stop the container
+```
+docker stop nominatim_container
+```
+
+Connect to the nominatim webserver with curl. If this succeeds, open [http://localhost:8080/](http:/localhost:8080) in a web browser
+
+```
+curl "http://localhost:8080"
+```
